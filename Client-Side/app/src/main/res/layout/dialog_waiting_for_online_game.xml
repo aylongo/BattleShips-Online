@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="350dp"
+    android:layout_height="400dp"
+    android:minWidth="350dp"
+    android:minHeight="400dp"
+    android:layout_gravity="center"
+    android:background="@drawable/scroll_paper"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Waiting For Another Player to Connect..."
+        android:textSize="28dp"
+        android:id="@+id/tvWaiting"
+        android:textStyle="bold"
+        android:textColor="@color/colorMenu"
+        android:layout_gravity="center"
+        android:layout_marginTop="70dp" />
+
+    <TextView
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text=""
+        android:textSize="18dp"
+        android:id="@+id/tvActiveGames"
+        android:textStyle="bold"
+        android:textColor="@color/colorMenu"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp" />
+
+</LinearLayout>
