@@ -1,9 +1,10 @@
 class Ship:
-    def __init__(self, x, y, length, horizontal):
+    def __init__(self, x, y, length, horizontal, is_wrecked):
         self.x = x
         self.y = y
         self.length = length
         self.horizontal = horizontal
+        self.is_wrecked = is_wrecked
 
     def get_x(self):
         return self.x
@@ -28,3 +29,9 @@ class Ship:
 
     def set_horizontal(self, horizontal):
         self.horizontal = horizontal
+
+    def get_wrecked(self):
+        return self.is_wrecked
+
+    def set_wrecked(self, is_wrecked):
+        self.is_wrecked = is_wrecked
