@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -7,64 +7,49 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
+import android.os.CountDownTimer;
 import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 public class OnlineGame implements Serializable {
     private int gameID;
     private Player player;
     private Opponent opponent;
     private int playerNum;
-    private String username;
+    private String playerName;
     private boolean isPlayerTurn;
     private int status;
 
-    public OnlineGame(String username) {
+    public OnlineGame(String playerName) {
         this.player = null;
-        this.username = username;
+        this.playerName = playerName;
         Pair<Integer, Integer> data = getIDAndPlayerNum();
         this.gameID = data.first;
         this.playerNum = data.second;
     }
 
-    public int getGameID() { return gameID; }
-
-    public void setGameID(int gameID) { this.gameID = gameID; }
-
     public Player getPlayer() { return this.player; }
 
     public void setPlayer(Player player) { this.player = player; }
 
-    public String getUsername() { return username; }
-
-    public void setUsername(String username) { this.username = username; }
-
     public boolean isPlayerTurn() { return this.isPlayerTurn; }
 
-    public void setPlayerTurn(boolean playerTurn) { this.isPlayerTurn = playerTurn; }
-
-    public Opponent getOpponent() { return opponent; }
+    public Opponent getOpponent() { return this.opponent; }
 
     public void setOpponent(Opponent opponent) { this.opponent = opponent; }
 
-    public int getStatus() { return status; }
+    public int getStatus() { return this.status; }
 
-    public void setStatus(int status) { this.status = status; }
+    public int getPlayerNum() { return this.playerNum; }
 
-    public int getPlayerNum() { return playerNum; }
-
-    public void setPlayerNum(int playerNum) { this.playerNum = playerNum; }
-
-    public void createInGameMenuDialog(final Context context, final AudioManager audioManager, int maxMusicVolume) {
+    public void createInGameMenuDialog(final Context context, final AudioManager audioManager, int maxMusicVolume, final CountDownTimer countDownTimer) {
         /*
         The function creates and shows a dialog where the user can quit in the middle of the game,
         or change some settings in the app.
@@ -81,8 +66,9 @@ public class OnlineGame implements Serializable {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(context, LoggedMainActivity.class);
-                intent.putExtra("Username", username);
+                intent.putExtra("Username", playerName);
                 intent.putExtra("Request", 1);
+                countDownTimer.cancel();
                 disconnectGame();
                 inGameMenuDialog.dismiss();
                 context.startActivity(intent);
@@ -113,13 +99,14 @@ public class OnlineGame implements Serializable {
         The function creates and shows a dialog which declares the game winner, and from that dialog
         the player can start a new game or move to the main menu (MainActivity).
         */
-        final String username = this.username;
+        final String username = this.playerName;
         final Dialog gameOverDialog = new Dialog(context);
         gameOverDialog.setContentView(R.layout.dialog_game_over);
         gameOverDialog.setCancelable(false);
         gameOverDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         TextView tvGameOver = (TextView) gameOverDialog.findViewById(R.id.tvGameOver);
         TextView tvTurns = (TextView) gameOverDialog.findViewById(R.id.tvTurns);
+        TextView tvScore = (TextView) gameOverDialog.findViewById(R.id.tvScore);
         Button btnReturnToStart = (Button) gameOverDialog.findViewById(R.id.btnReturnToMain);
         Button btnStartBattle = (Button) gameOverDialog.findViewById(R.id.btnStartBattle);
         btnStartBattle.setVisibility(View.INVISIBLE);
@@ -141,7 +128,9 @@ public class OnlineGame implements Serializable {
             tvGameOver.setText("You Lose!");
             tvTurns.setText(String.format("The enemy has sunk your ships in %d turns!", opponent.getTurns()));
         }
+        tvScore.setText(String.format("Your Score: %d", player.getScore()));
         updateLastGameData(isPlayerWon);
+        removeGame();
         gameOverDialog.show();
     }
 
@@ -149,7 +138,7 @@ public class OnlineGame implements Serializable {
         JSONObject lastGameData = new JSONObject();
         try {
             lastGameData.put("request", "update_last_game_data");
-            lastGameData.put("username", this.username);
+            lastGameData.put("username", this.playerName);
             lastGameData.put("is_win", String.valueOf(isPlayerWon));
             lastGameData.put("score", String.valueOf(this.player.getScore()));
             Client client = new Client(lastGameData);
@@ -161,120 +150,178 @@ public class OnlineGame implements Serializable {
     }
 
     public Pair<Integer, Integer> getIDAndPlayerNum() {
-        JSONObject lastGameData = new JSONObject();
+        JSONObject gameData = new JSONObject();
         try {
-            lastGameData.put("request", "start_online_game");
-            Client client = new Client(lastGameData);
+            gameData.put("request", "start_online_game");
+            Client client = new Client(gameData);
             JSONObject received = client.execute().get();
             int gameID = received.getInt("game_id");
             int player = received.getInt("player");
-            return new Pair<Integer, Integer>(gameID, player);
+            this.isPlayerTurn = received.getBoolean("is_player_turn");
+            return new Pair<>(gameID, player);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public void sendBoard() {
-        JSONObject updateBoard = new JSONObject();
+    public boolean setShip(int x, int y, int length, boolean horizontal) {
+        JSONObject boardShip = new JSONObject();
         try {
-            updateBoard.put("request", "update_board");
-            updateBoard.put("game_id", this.gameID);
-            updateBoard.put("player", this.playerNum);
-            updateBoard.put("board", player.getBoard().getCharactersBoardJA());
-            Client client = new Client(updateBoard);
+            boardShip.put("request", "add_ship");
+            boardShip.put("game_id", this.gameID);
+            boardShip.put("player", this.playerNum);
+            boardShip.put("x", x);
+            boardShip.put("y", y);
+            boardShip.put("length", length);
+            boardShip.put("horizontal", horizontal);
+            boardShip.put("RAND_FLAG", false);
+            Client client = new Client(boardShip);
             JSONObject received = client.execute().get();
-            this.isPlayerTurn = received.getBoolean("player_turn");
+            return received.getBoolean("is_placed");
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 
-    public void sendShipsSetOppShips() {
-        JSONObject updateShips = new JSONObject();
-        JSONArray jsonShipsList = new JSONArray();
-        for (int i = 0; i < Constants.SHIPS_ARRAY_LENGTH; i++) {
-            jsonShipsList.put(player.getShips().get(i).jsonObjectShip());
-        }
+    public Triplet<Boolean, Integer, Integer> setRandomShip(int length) {
+        JSONObject boardShip = new JSONObject();
         try {
-            updateShips.put("request", "update_ships");
-            updateShips.put("game_id", this.gameID);
-            updateShips.put("player", this.playerNum);
-            updateShips.put("ships", jsonShipsList);
-            Client client = new Client(updateShips);
+            boardShip.put("request", "add_ship");
+            boardShip.put("game_id", this.gameID);
+            boardShip.put("player", this.playerNum);
+            boardShip.put("length", length);
+            boardShip.put("RAND_FLAG", true);
+            Client client = new Client(boardShip);
             JSONObject received = client.execute().get();
-            JSONArray jsonOppShipsList = received.getJSONArray("opponent_ships");
-            ArrayList<Ship> oppShipsList = new ArrayList<>();
-            for (int i = 0; i < jsonOppShipsList.length(); i++) {
-                int x = jsonOppShipsList.getJSONArray(i).getInt(0);
-                int y = jsonOppShipsList.getJSONArray(i).getInt(1);
-                int length = jsonOppShipsList.getJSONArray(i).getInt(2);
-                boolean horizontal = jsonOppShipsList.getJSONArray(i).getBoolean(3);
-                oppShipsList.add(new Ship(x, y, length, horizontal));
-            }
-            this.opponent.setShips(oppShipsList);
+            int x = received.getInt("x");
+            int y = received.getInt("y");
+            boolean horizontal = received.getBoolean("horizontal");
+            return new Triplet<>(horizontal, x, y);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
     }
 
-    public void sendTurn(Opponent opponent) {
+    public char sendTurn(int x, int y) {
         JSONObject turn = new JSONObject();
+        char turnResult = '!';
         try {
             turn.put("request", "do_turn");
             turn.put("game_id", this.gameID);
             turn.put("player", this.playerNum);
-            turn.put("board", opponent.getBoard().getCharactersBoardJA());
+            turn.put("x", x);
+            turn.put("y", y);
             Client client = new Client(turn);
             JSONObject received = client.execute().get();
-            this.status = received.getInt("game_status");
+            if (received.getBoolean("is_done")) {
+                turnResult = received.getString("result").charAt(0);
+                this.isPlayerTurn = received.getBoolean("player_turn");
+                this.status = received.getInt("game_status");
+            }
+            return turnResult;
         } catch (Exception e) {
             e.printStackTrace();
+            return turnResult;
         }
     }
 
-    public Character[][] getOppBoard() {
-        JSONObject getOppBoard = new JSONObject();
+    public Pair<Integer, Integer> getRandomPos() {
+        JSONObject turn = new JSONObject();
+        Pair<Integer, Integer> pos;
         try {
-            getOppBoard.put("request", "get_opponent_board");
-            getOppBoard.put("game_id", this.getGameID());
-            getOppBoard.put("player", this.getPlayerNum());
-            Client client = new Client(getOppBoard);
+            turn.put("request", "get_rand_pos");
+            turn.put("game_id", this.gameID);
+            turn.put("player", this.playerNum);
+            Client client = new Client(turn);
             JSONObject received = client.execute().get();
-            JSONArray oppBoardJA = received.getJSONArray("opponent_board");
-            Character[][] oppBoardCA = new Character[Constants.BOARD_ARRAY_LENGTH][Constants.BOARD_ARRAY_LENGTH];
-            for(int y = 0; y < oppBoardCA.length; y++){
-                for(int x = 0; x < oppBoardCA.length; x++){
-                    oppBoardCA[y][x] = oppBoardJA.getJSONArray(y).getString(x).charAt(0);
-                }
-            }
-            return oppBoardCA;
+            int x = received.getInt("x");
+            int y = received.getInt("y");
+            pos = new Pair<>(x, y);
+            return pos;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public Character[][] getOppTurn() {
+    public Triplet<Integer, Integer, Character> getOppTurn() {
         JSONObject turn = new JSONObject();
+        Triplet<Integer, Integer, Character> oppTurn = null;
         try {
             turn.put("request", "waiting_for_turn");
             turn.put("game_id", this.gameID);
             turn.put("player", this.playerNum);
             Client client = new Client(turn);
             JSONObject received = client.execute().get();
-            this.status = received.getInt("game_status");
-            JSONArray playerBoardJA = received.getJSONArray("board");
-            Character[][] playerBoardCA = new Character[Constants.BOARD_ARRAY_LENGTH][Constants.BOARD_ARRAY_LENGTH];
-            for (int y = 0; y < playerBoardCA.length; y++) {
-                for (int x = 0; x < playerBoardCA.length; x++) {
-                    playerBoardCA[y][x] = playerBoardJA.getJSONArray(y).getString(x).charAt(0);
-                }
+            boolean isTurnDone = received.getBoolean("is_done");
+            if (isTurnDone) {
+                int xTurn = received.getInt("x");
+                int yTurn = received.getInt("y");
+                char turnResult = received.getString("result").charAt(0);
+                this.isPlayerTurn = received.getBoolean("player_turn");
+                oppTurn = new Triplet<>(xTurn, yTurn, turnResult);
             }
-            return playerBoardCA;
+            this.status = received.getInt("game_status");
+            return oppTurn;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public boolean isPlayerShipWrecked() {
+        JSONObject isShipWrecked = new JSONObject();
+        try {
+            isShipWrecked.put("request", "is_player_ship_wrecked");
+            isShipWrecked.put("game_id", this.gameID);
+            isShipWrecked.put("player", this.playerNum);
+            Client client = new Client(isShipWrecked);
+            JSONObject received = client.execute().get();
+            return received.getBoolean("is_wrecked");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public JSONObject isOppShipWrecked() {
+        JSONObject isShipWrecked = new JSONObject();
+        JSONObject shipData = null;
+        try {
+            isShipWrecked.put("request", "is_opponent_ship_wrecked");
+            isShipWrecked.put("game_id", this.gameID);
+            isShipWrecked.put("player", this.playerNum);
+            Client client = new Client(isShipWrecked);
+            JSONObject received = client.execute().get();
+            if (received.getBoolean("is_wrecked")) {
+                shipData = new JSONObject();
+                shipData.put("x", received.getInt("x"));
+                shipData.put("y", received.getInt("y"));
+                shipData.put("length", received.getInt("length"));
+                shipData.put("horizontal", received.getBoolean("horizontal"));
+            }
+            return shipData;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public int getScore() {
+        JSONObject score = new JSONObject();
+        try {
+            score.put("request", "get_score");
+            score.put("game_id", this.gameID);
+            score.put("player", this.playerNum);
+            Client client = new Client(score);
+            JSONObject received = client.execute().get();
+            return received.getInt("score");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
         }
     }
 
@@ -288,6 +335,20 @@ public class OnlineGame implements Serializable {
             JSONObject received = client.execute().get();
             String response = received.getString("response");
             System.out.println(String.format("Game %d: Player %d has disconnected: %s", this.gameID, this.playerNum, response));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void removeGame() {
+        JSONObject disconnect = new JSONObject();
+        try {
+            disconnect.put("request", "remove_game");
+            disconnect.put("game_id", this.gameID);
+            Client client = new Client(disconnect);
+            JSONObject received = client.execute().get();
+            String response = received.getString("response");
+            System.out.println(String.format("Game %d is over: %s", this.gameID, response));
         } catch (Exception e) {
             e.printStackTrace();
         }

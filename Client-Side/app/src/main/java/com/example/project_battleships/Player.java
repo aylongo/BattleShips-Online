@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,9 +24,9 @@ public class Player implements Serializable {
 
     public ArrayList<Ship> getShips() { return this.ships; }
 
-    public void setShips(ArrayList<Ship> ships) { this.ships = ships; }
-
     public int getScore() { return this.score; }
+
+    public void setScore(int score) { this.score = score; }
 
     public int getTurns() { return this.turns; }
 
@@ -92,27 +92,6 @@ public class Player implements Serializable {
                 Ship ship = computer.getShipOnPlace(x, y);
                 if (ship != null && ship.checkIfWrecked(computerBoard)) {
                     computerBoard.updateWreckedShip(ship);
-                    this.updateScore();
-                }
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    public boolean handleTurn(Opponent opponent, int x, int y) {
-        CharactersBoard opponentBoard = opponent.getBoard();
-        switch (opponentBoard.getCharactersBoard()[y][x]) {
-            case 'o':
-                opponentBoard.getCharactersBoard()[y][x] = 'm';
-                this.incTurns();
-                return true;
-            case 's':
-                opponentBoard.getCharactersBoard()[y][x] = 'h';
-                this.incTurns();
-                Ship ship = opponent.getShipOnPlace(x, y);
-                if (ship != null && ship.checkIfWrecked(opponentBoard)) {
-                    opponentBoard.updateWreckedShip(ship);
                     this.updateScore();
                 }
                 return true;

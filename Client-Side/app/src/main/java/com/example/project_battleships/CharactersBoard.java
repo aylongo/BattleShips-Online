@@ -1,6 +1,4 @@
-package com.example.project_battleships_v4;
-
-import org.json.JSONArray;
+package com.example.project_battleships;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -38,6 +36,24 @@ public class CharactersBoard implements Serializable {
         }
     }
 
+    public void updateWreckedShip(int shipX, int shipY, int shipLength, boolean horizontal) {
+        /*
+        The function updates a wrecked ship on the characters board,
+        and changes its parts mark on the board from 'h' to 'w',
+        so that the update of the buttons board will show the wrecked ships in a different color.
+        A wrecked ship is a ship which all of her parts are marked on the board as 'h'.
+        */
+        if (horizontal) {
+            for (int x = shipX; x < shipX + shipLength; x++) {
+                this.board[shipY][x] = 'w';
+            }
+        } else {
+            for (int y = shipY; y < shipY + shipLength; y++) {
+                this.board[y][shipX] = 'w';
+            }
+        }
+    }
+
     @Override
     public String toString() {
         String strBoard = "";
@@ -49,18 +65,5 @@ public class CharactersBoard implements Serializable {
             strBoard += strRowBoard + "\n";
         }
         return "Board {\n" + strBoard + "\n}";
-    }
-
-    public JSONArray getCharactersBoardJA() {
-        Character[][] oppBoardCA = this.getCharactersBoard();
-        JSONArray oppBoardJA = new JSONArray();
-        for (int y = 0; y < Constants.BOARD_ARRAY_LENGTH; y++) {
-            JSONArray oppBoardJARow = new JSONArray();
-            for (int x = 0; x < Constants.BOARD_ARRAY_LENGTH; x++) {
-                oppBoardJARow.put(oppBoardCA[y][x]);
-            }
-            oppBoardJA.put(oppBoardJARow);
-        }
-        return oppBoardJA;
     }
 }

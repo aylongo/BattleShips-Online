@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,6 +21,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -89,14 +92,8 @@ public class LoggedMainActivity extends AppCompatActivity implements View.OnClic
             waitingDialog.setContentView(R.layout.dialog_waiting_for_online_game);
             waitingDialog.setCancelable(false);
             waitingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            TextView tvActiveGames = waitingDialog.findViewById(R.id.tvActiveGames);
-            game = new OnlineGame(username);
-            Intent intent = new Intent(this, OnlinePlaceShipsActivity.class);
-            intent.putExtra("Game", game);
-            waitingDialog.dismiss();
-            startActivity(intent);
-            finish();
             waitingDialog.show();
+            queueThread(waitingDialog).start();
         } else if (view == btnShowLeaderboard) {
             Intent intent = new Intent(this, LeaderboardActivity.class);
             intent.putExtra("Username", username);
@@ -182,5 +179,49 @@ public class LoggedMainActivity extends AppCompatActivity implements View.OnClic
             }
         });
         settingsDialog.show();
+    }
+
+    public Thread queueThread(final Dialog dialog) {
+       return new Thread() {
+            @Override
+            public void run() {
+                TextView tvActiveGames = dialog.findViewById(R.id.tvActiveGames);
+                tvActiveGames.setText(String.format("Active Games: %s", getActiveGames()));
+                game = new OnlineGame(username);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView tvWaiting = dialog.findViewById(R.id.tvWaiting);
+                        tvWaiting.setText("Game Found!");
+                        new CountDownTimer(1000, 1000) {
+                            @Override
+                            public void onTick(long l) {
+                            }
+                            @Override
+                            public void onFinish() {
+                                Intent intent = new Intent(LoggedMainActivity.this, OnlinePlaceShipsActivity.class);
+                                intent.putExtra("Game", game);
+                                dialog.dismiss();
+                                startActivity(intent);
+                                finish();
+                            }
+                        }.start();
+                    }
+                });
+            }
+        };
+    }
+
+    private String getActiveGames() {
+        JSONObject getActiveGames = new JSONObject();
+        try {
+            getActiveGames.put("request", "get_active_games");
+            Client client = new Client(getActiveGames);
+            JSONObject received = client.execute().get();
+            return received.getString("games");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "0";
+        }
     }
 }

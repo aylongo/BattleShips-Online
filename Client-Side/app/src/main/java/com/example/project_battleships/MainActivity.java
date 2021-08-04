@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;

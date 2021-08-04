@@ -1,30 +1,25 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.util.Pair;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
+import android.os.CountDownTimer;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
 import java.io.Serializable;
 
-public class PlayerTurnActivity extends AppCompatActivity implements View.OnClickListener {
+public class ComputerTurnActivity extends AppCompatActivity {
     Game game;
     LinearLayout boardLinearLayout;
     Buttons buttons;
-    Computer computer;
     Player player;
-    CharactersBoard compBoard;
+    Computer computer;
+    CharactersBoard playerBoard;
     TextView tvScore;
 
     AudioManager audioManager;
@@ -33,7 +28,7 @@ public class PlayerTurnActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_player_turn);
+        setContentView(R.layout.activity_computer_turn);
         boardLinearLayout = (LinearLayout) findViewById(R.id.board_linear_layout);
         buttons = new Buttons(this, boardLinearLayout);
         tvScore = (TextView) findViewById(R.id.tvScore);
@@ -47,9 +42,9 @@ public class PlayerTurnActivity extends AppCompatActivity implements View.OnClic
         Intent intent = getIntent();
         game = (Game) intent.getSerializableExtra("Game");
         if (game != null) {
-            computer = game.getComputer();
             player = game.getPlayer();
-            compBoard = computer.getBoard();
+            computer = game.getComputer();
+            playerBoard = player.getBoard();
             int playerScore = player.getScore();
             tvScore.setText(String.format("Your Score: %d", playerScore));
         }
@@ -58,47 +53,40 @@ public class PlayerTurnActivity extends AppCompatActivity implements View.OnClic
     @Override
     protected void onResume() {
         super.onResume();
-        buttons.setClickable(true);
-        buttons.setListener();
-        updateCompButtonsBoard();
-    }
+        updatePlayerButtonsBoard();
+        // CountDownTimer Class delays the computer's turn so the player can see the computer's selection.
+        new CountDownTimer(1500, 400) {
+            @Override
+            public void onTick(long l) {
 
-    @Override
-    public void onBackPressed() {
-        game.createInGameMenuDialog(this, audioManager, maxMusicVolume);
-    }
-
-    @Override
-    public void onClick(View view) {
-        Pair<Integer, Integer> point = buttons.getButtonPos((Button) view);
-        int x = point.first, y = point.second;
-        if (player.handleTurn(computer, x, y)) {
-            game.setPlayerTurn(false);
-        } else {
-            Toast.makeText(this, "Please press on a valid place", Toast.LENGTH_LONG).show();
-        }
-        if (!game.isPlayerTurn()) {
-            updateCompButtonsBoard();
-            buttons.setClickable(false);
-            int playerScore = player.getScore();
-            tvScore.setText(String.format("Your Score: %d", playerScore));
-            if (!game.isGameOver(PlayerTurnActivity.this)) {
-                Intent battleIntent = new Intent(this, ComputerTurnActivity.class);
-                battleIntent.putExtra("Game", (Serializable) game);
-                startActivity(battleIntent);
-                finish();
             }
-        }
+
+            @Override
+            public void onFinish() {
+                computer.doTurn(player);
+                updatePlayerButtonsBoard();
+                if (!game.isGameOver(ComputerTurnActivity.this)) {
+                    game.setPlayerTurn(true);
+                    Intent battleIntent = new Intent(ComputerTurnActivity.this, PlayerTurnActivity.class);
+                    battleIntent.putExtra("Game", (Serializable) game);
+                    startActivity(battleIntent);
+                    finish();
+                }
+            }
+        }.start();
     }
 
-    public void updateCompButtonsBoard() {
+    @Override
+    public void onBackPressed() { return; }
+
+    public void updatePlayerButtonsBoard() {
         /*
-        The function updates the computer's buttons board
+        The function updates the player's buttons board
         in order to let the player to watch the changes in the game.
         */
         for (int y = 0; y < Constants.BOARD_ARRAY_LENGTH; y++) {
             for (int x = 0; x < Constants.BOARD_ARRAY_LENGTH; x++) {
-                switch (compBoard.getCharactersBoard()[y][x]) {
+                switch (playerBoard.getCharactersBoard()[y][x]) {
                     case 'w':
                         buttons.getButtons()[y][x].setBackgroundColor(getResources().getColor(R.color.colorButtonWrecked));
                         break;
@@ -109,25 +97,13 @@ public class PlayerTurnActivity extends AppCompatActivity implements View.OnClic
                         buttons.getButtons()[y][x].setBackgroundColor(getResources().getColor(R.color.colorButtonMiss));
                         break;
                     case 's':
+                        buttons.getButtons()[y][x].setBackgroundColor(getResources().getColor(R.color.colorButtonShip));
+                        break;
                     case 'o':
                         buttons.getButtons()[y][x].setBackgroundColor(getResources().getColor(R.color.colorButtonBackground));
                         break;
                 }
             }
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.game_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        super.onOptionsItemSelected(item);
-        game.createInGameMenuDialog(this, audioManager, maxMusicVolume);
-        return true;
     }
 }

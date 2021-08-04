@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import android.app.Activity;
 import android.content.Context;
@@ -42,8 +42,8 @@ public class LeaderboardAdapter extends ArrayAdapter<JSONArray> {
         try {
             JSONArray playerStats = (JSONArray) this.playersDataList.get(position);
             tvUsername.setText((CharSequence) playerStats.get(0));
-            tvHighestScore.setText((CharSequence) playerStats.get(1));
-            tvWins.setText((CharSequence) playerStats.get(2));
+            tvHighestScore.setText(String.valueOf(playerStats.get(1)));
+            tvWins.setText(String.valueOf(playerStats.get(2)));
             if (tvUsername.getText().toString().equals(this.username)) {
                 item.setBackgroundColor(this.context.getResources().getColor(R.color.colorLeaderboardUserItem));
             }

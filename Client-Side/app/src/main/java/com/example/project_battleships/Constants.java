@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 public class Constants {
     public static final int BOARD_ARRAY_LENGTH = 10;

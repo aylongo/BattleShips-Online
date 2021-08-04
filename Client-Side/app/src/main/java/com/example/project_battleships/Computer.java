@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.project_battleships_v4">
+    package="com.example.project_battleships">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:allowBackup="true"
@@ -9,24 +9,24 @@
         android:roundIcon="@mipmap/ic_launcher_battleships_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.example.project_battleships_v4.MainActivity">
+        <activity android:name="com.example.project_battleships.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.example.project_battleships_v4.LoggedMainActivity" />
-        <activity android:name="com.example.project_battleships_v4.PlaceShipsActivity" />
-        <activity android:name="com.example.project_battleships_v4.ComputerTurnActivity" />
-        <activity android:name="com.example.project_battleships_v4.PlayerTurnActivity" />
-        <activity android:name="com.example.project_battleships_v4.LoginActivity" />
-        <activity android:name="com.example.project_battleships_v4.RegisterActivity" />
-        <activity android:name="com.example.project_battleships_v4.LeaderboardActivity"/>
-        <activity android:name="com.example.project_battleships_v4.OnlinePlaceShipsActivity"/>
-        <activity android:name="com.example.project_battleships_v4.OnlinePlayerTurnActivity"/>
-        <activity android:name="com.example.project_battleships_v4.OnlineOpponentTurnActivity"/>
-        <service android:name="com.example.project_battleships_v4.PlayService" />
+        <activity android:name="com.example.project_battleships.LoggedMainActivity" />
+        <activity android:name="com.example.project_battleships.PlaceShipsActivity" />
+        <activity android:name="com.example.project_battleships.ComputerTurnActivity" />
+        <activity android:name="com.example.project_battleships.PlayerTurnActivity" />
+        <activity android:name="com.example.project_battleships.LoginActivity" />
+        <activity android:name="com.example.project_battleships.RegisterActivity" />
+        <activity android:name="com.example.project_battleships.LeaderboardActivity"/>
+        <activity android:name="com.example.project_battleships.OnlinePlaceShipsActivity"/>
+        <activity android:name="com.example.project_battleships.OnlinePlayerTurnActivity"/>
+        <activity android:name="com.example.project_battleships.OnlineOpponentTurnActivity"/>
+        <service android:name="com.example.project_battleships.PlayService" />
     </application>
 
 </manifest>

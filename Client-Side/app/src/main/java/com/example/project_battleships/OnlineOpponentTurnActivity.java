@@ -1,4 +1,4 @@
-package com.example.project_battleships_v4;
+package com.example.project_battleships;
 
 import android.content.Context;
 import android.content.Intent;
@@ -54,8 +54,8 @@ public class OnlineOpponentTurnActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updatePlayerButtonsBoard();
-        // CountDownTimer Class delays the computer's turn so the player can see the computer's selection.
         new CountDownTimer(300, 500) {
+
             @Override
             public void onTick(long l) {
 
@@ -63,15 +63,21 @@ public class OnlineOpponentTurnActivity extends AppCompatActivity {
 
             @Override
             public void onFinish() {
-                playerBoard = player.getBoard();
-                Character[][] playerBoardCA = game.getOppTurn();
-                if (playerBoardCA != null) {
-                    playerBoard.setBoard(playerBoardCA);
-                    updatePlayerButtonsBoard();
+                Triplet<Integer, Integer, Character> oppTurn = game.getOppTurn();
+                if (oppTurn != null) {
+                    int xTurn = oppTurn.getFirst();
+                    int yTurn = oppTurn.getSecond();
+                    char turnResult = oppTurn.getThird();
+                    playerBoard.getCharactersBoard()[yTurn][xTurn] = turnResult;
                     opponent.incTurns();
-                }
-                if (game.getStatus() == -1) {
-                    game.setPlayerTurn(true);
+                    if (turnResult == 'h') {
+                        Ship ship = player.getShipOnPlace(xTurn, yTurn);
+                        if (game.isPlayerShipWrecked()) {
+                            playerBoard.updateWreckedShip(ship);
+                        }
+                    }
+                    updatePlayerButtonsBoard();
+                } if (game.getStatus() == -1) {
                     Intent battleIntent = new Intent(OnlineOpponentTurnActivity.this, OnlinePlayerTurnActivity.class);
                     battleIntent.putExtra("Game", (Serializable) game);
                     startActivity(battleIntent);
@@ -79,11 +85,7 @@ public class OnlineOpponentTurnActivity extends AppCompatActivity {
                 } else {
                     int gameStatus = game.getStatus();
                     int player = game.getPlayerNum();
-                    if ((gameStatus == 1 && player == 1) || (gameStatus == 2 && player == 2)) {
-                        game.createGameOverDialog(OnlineOpponentTurnActivity.this, true);
-                    } else {
-                        game.createGameOverDialog(OnlineOpponentTurnActivity.this, false);
-                    }
+                    game.createGameOverDialog(OnlineOpponentTurnActivity.this, (gameStatus == 1 && player == 1) || (gameStatus == 2 && player == 2));
                 }
             }
         }.start();
